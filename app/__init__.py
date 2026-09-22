@@ -25,6 +25,7 @@ def create_app(config_name="dev"):
     limiter.init_app(app)
 
     # Imports dans la fabrique : evite les imports circulaires
+    from app import models
     from app.errors import register_error_handlers, register_jwt_error_handlers
     from app.routes.health import health_bp
 
