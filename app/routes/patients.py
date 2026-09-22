@@ -3,14 +3,16 @@ from flask_jwt_extended import current_user
 
 from app.models import Role
 from app.permissions import roles_required
+from app.schemas.appointment import AppointmentQuerySchema, AppointmentSchema
 from app.schemas.common import paginated_response
 from app.schemas.patient import PatientQuerySchema, PatientSchema, PatientUpdateSchema
-from app.services import patient_service
+from app.services import appointment_service, patient_service
 from app.utils import get_json_body
 
 patients_bp = Blueprint("patients", __name__, url_prefix="/api/v1/patients")
 
 patient_schema = PatientSchema()
+appointment_schema = AppointmentSchema()
 
 
 @patients_bp.get("/")
@@ -79,3 +81,25 @@ def update_patient(patient_id):
     data = PatientUpdateSchema().load(get_json_body())
     patient = patient_service.update_patient(patient_id, data, current_user)
     return jsonify(patient_schema.dump(patient)), 200
+
+@patients_bp.get("/<int:patient_id>/appointments")
+@roles_required(Role.ADMIN, Role.PATIENT)
+def patient_history(patient_id):
+    """Historique des rendez-vous d'un patient (le patient lui-meme ou un admin)
+    ---
+    tags: [Patients]
+    security: [{bearerAuth: []}]
+    parameters:
+      - {in: path, name: patient_id, required: true, schema: {type: integer}}
+      - {in: query, name: status, schema: {type: string, enum: [booked, cancelled]}}
+      - {in: query, name: sort, schema: {type: string, enum: [start_time, -start_time]}}
+      - {in: query, name: page, schema: {type: integer, default: 1}}
+      - {in: query, name: per_page, schema: {type: integer, default: 10}}
+    responses:
+      200: {description: Collection paginee de rendez-vous}
+      403: {description: Historique d'un autre patient}
+      404: {description: Patient introuvable}
+    """
+    args = AppointmentQuerySchema().load(request.args)
+    pagination = appointment_service.list_patient_history(patient_id, current_user, **args)
+    return jsonify(paginated_response(pagination, appointment_schema)), 200

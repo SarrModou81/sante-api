@@ -3,14 +3,16 @@ from flask_jwt_extended import current_user
 
 from app.models import Role
 from app.permissions import roles_required
-from app.schemas.common import paginated_response
+from app.schemas.common import PaginationQuerySchema, paginated_response
 from app.schemas.doctor import DoctorCreateSchema, DoctorQuerySchema, DoctorSchema, DoctorUpdateSchema
-from app.services import doctor_service
+from app.schemas.slot import SlotSchema
+from app.services import doctor_service, slot_service
 from app.utils import get_json_body
 
 doctors_bp = Blueprint("doctors", __name__, url_prefix="/api/v1/doctors")
 
 doctor_schema = DoctorSchema()
+slot_schema = SlotSchema()
 
 
 @doctors_bp.get("/")
@@ -61,6 +63,24 @@ def get_doctor(doctor_id):
     """
     return jsonify(doctor_schema.dump(doctor_service.get_doctor(doctor_id))), 200
 
+@doctors_bp.get("/<int:doctor_id>/slots")
+def doctor_availabilities(doctor_id):
+    """Disponibilites d'un medecin : creneaux libres a venir (public)
+    ---
+    tags: [Doctors]
+    parameters:
+      - {in: path, name: doctor_id, required: true, schema: {type: integer}}
+      - {in: query, name: page, schema: {type: integer, default: 1}}
+      - {in: query, name: per_page, schema: {type: integer, default: 10}}
+    responses:
+      200:
+        description: Collection paginee de creneaux
+      404:
+        description: Medecin introuvable
+    """
+    args = PaginationQuerySchema().load(request.args)
+    pagination = slot_service.list_doctor_availabilities(doctor_id, **args)
+    return jsonify(paginated_response(pagination, slot_schema)), 200
 
 @doctors_bp.post("/")
 @roles_required(Role.ADMIN)
