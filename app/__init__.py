@@ -30,9 +30,11 @@ def create_app(config_name="dev"):
     from app.commands import register_commands
     from app.errors import register_error_handlers, register_jwt_error_handlers
     from app.routes.auth import auth_bp
+    from app.routes.doctors import doctors_bp
     from app.routes.health import health_bp
+    from app.routes.patients import patients_bp
 
-    for blueprint in (health_bp, auth_bp):
+    for blueprint in (health_bp, auth_bp, doctors_bp, patients_bp):
         app.register_blueprint(blueprint)
 
     register_error_handlers(app)
