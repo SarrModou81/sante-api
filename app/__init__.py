@@ -25,14 +25,18 @@ def create_app(config_name="dev"):
     limiter.init_app(app)
 
     # Imports dans la fabrique : evite les imports circulaires
-    from app import models
+    from app import models  # noqa: F401  (enregistre les tables pour Alembic)
+    from app import permissions  # noqa: F401  (callback JWT -> current_user)
+    from app.commands import register_commands
     from app.errors import register_error_handlers, register_jwt_error_handlers
+    from app.routes.auth import auth_bp
     from app.routes.health import health_bp
 
-    for blueprint in (health_bp,):
+    for blueprint in (health_bp, auth_bp):
         app.register_blueprint(blueprint)
 
     register_error_handlers(app)
     register_jwt_error_handlers(jwt)
+    register_commands(app)
 
     return app
