@@ -24,7 +24,7 @@ def create_app(config_name="dev"):
     cors.init_app(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
     limiter.init_app(app)
 
-        # Imports dans la fabrique : evite les imports circulaires
+    # Imports dans la fabrique : evite les imports circulaires
     from app import models  # noqa: F401  (enregistre les tables pour Alembic)
     from app import permissions  # noqa: F401  (callback JWT -> current_user)
     from app.commands import register_commands
@@ -36,12 +36,14 @@ def create_app(config_name="dev"):
     from app.routes.health import health_bp
     from app.routes.patients import patients_bp
     from app.routes.slots import slots_bp
+    from app.security import register_security
 
     for blueprint in (health_bp, auth_bp, doctors_bp, patients_bp, slots_bp, appointments_bp):
         app.register_blueprint(blueprint)
 
     register_error_handlers(app)
     register_jwt_error_handlers(jwt)
+    register_security(app)
     register_commands(app)
     init_docs(app)
 
