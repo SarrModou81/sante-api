@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sante}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sante}
+      POSTGRES_DB: ${POSTGRES_DB:-sante}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_CONFIG: prod
+      SECRET_KEY: ${SECRET_KEY:-compose-secret-a-remplacer-dans-le-fichier-env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-compose-jwt-secret-a-remplacer-dans-le-fichier-env}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-sante}:${POSTGRES_PASSWORD:-sante}@db:5432/${POSTGRES_DB:-sante}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
