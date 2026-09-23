@@ -28,6 +28,7 @@ def create_app(config_name="dev"):
     from app import models  # noqa: F401  (enregistre les tables pour Alembic)
     from app import permissions  # noqa: F401  (callback JWT -> current_user)
     from app.commands import register_commands
+    from app.docs import init_docs
     from app.errors import register_error_handlers, register_jwt_error_handlers
     from app.routes.appointments import appointments_bp
     from app.routes.auth import auth_bp
@@ -42,5 +43,6 @@ def create_app(config_name="dev"):
     register_error_handlers(app)
     register_jwt_error_handlers(jwt)
     register_commands(app)
+    init_docs(app)
 
     return app
